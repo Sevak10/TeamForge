@@ -1,0 +1,118 @@
+@page "{id:guid}"
+@model TeamForge.Web.Pages.Requirements.DetailsModel
+@using TeamForge.Domain
+@{
+    ViewData["Title"] = "Analysis review";
+}
+
+<div class="results-page">
+    <a class="back-link" asp-page="/Index">← Back to workspace</a>
+    <header class="results-header">
+        <div>
+            <div class="card-kicker">TEAM ANALYSIS · @Model.Submission.CreatedAt.ToLocalTime().ToString("MMM d, yyyy")</div>
+            <h1>Requirement review</h1>
+        </div>
+        <span class="review-badge @(Model.Submission.Status == SubmissionStatus.Approved ? "approved" : "pending")">@(Model.Submission.Status == SubmissionStatus.Approved ? "Approved" : "Awaiting your review")</span>
+    </header>
+
+    @if (!string.IsNullOrEmpty(Model.Notice))
+    {
+        <div class="alert alert-success" role="status">@Model.Notice</div>
+    }
+    <section class="requirement-panel">
+        <div class="card-kicker">ORIGINAL REQUIREMENT</div>
+        <p>@Model.Submission.Requirement</p>
+    </section>
+
+    <nav class="result-tabs" aria-label="Agent results">
+        <a href="#business">01 <span>Business analysis</span></a>
+        <a href="#developer">02 <span>Developer plan</span></a>
+        <a href="#qa">03 <span>QA test cases</span></a>
+    </nav>
+
+    <section class="result-section" id="business">
+        <div class="result-title"><div class="agent-avatar ba">BA</div><div><div class="card-kicker">ROLE 01</div><h2>Business analyst</h2></div></div>
+        @if (Model.BusinessAnalysis.AppliedOptions is { } businessOptions)
+        {
+            <div class="applied-settings"><span>@businessOptions.Level level</span>@if (!string.IsNullOrWhiteSpace(businessOptions.AdditionalGuidance)) { <p><b>Guidance used:</b> @businessOptions.AdditionalGuidance</p> }</div>
+        }
+        @if (Model.BusinessAnalysis.ClarificationQuestions.Count > 0)
+        {
+            <div class="subsection"><h3>Questions to clarify</h3><ul class="question-list">@foreach (var question in Model.BusinessAnalysis.ClarificationQuestions) { <li>@question</li> }</ul></div>
+        }
+        @foreach (var story in Model.BusinessAnalysis.UserStories)
+        {
+            <article class="story-card">
+                <div class="story-meta"><span class="story-id">@story.Id</span><h3>@story.Title</h3></div>
+                <p class="story-sentence"><b>As a</b> @story.AsA, <b>I want</b> @story.IWant, <b>so that</b> @story.SoThat.</p>
+                <h4>Acceptance criteria</h4>
+                <ol class="criteria-list">@foreach (var criterion in story.AcceptanceCriteria) { <li>@criterion</li> }</ol>
+            </article>
+        }
+    </section>
+
+    <section class="result-section" id="developer">
+        <div class="result-title"><div class="agent-avatar dev">DE</div><div><div class="card-kicker">ROLE 02</div><h2>Developer plan</h2></div></div>
+        @if (Model.DeveloperAnalysis.AppliedOptions is { } developerOptions)
+        {
+            <div class="applied-settings"><span>@developerOptions.Level level</span>@if (!string.IsNullOrWhiteSpace(developerOptions.AdditionalGuidance)) { <p><b>Guidance used:</b> @developerOptions.AdditionalGuidance</p> }</div>
+        }
+        @if (Model.DeveloperAnalysis.ClarificationQuestions.Count > 0)
+        {
+            <div class="subsection"><h3>Technical questions</h3><ul class="question-list">@foreach (var question in Model.DeveloperAnalysis.ClarificationQuestions) { <li>@question</li> }</ul></div>
+        }
+        <article class="story-card"><h3>Implementation approach</h3><p>@Model.DeveloperAnalysis.ImplementationApproach</p>
+            <h4>Dependencies and considerations</h4><ul class="criteria-list">@foreach (var item in Model.DeveloperAnalysis.Dependencies) { <li>@item</li> }</ul>
+        </article>
+        <h3 class="subsection-heading">Unit tests developers should write</h3>
+        @foreach (var plan in Model.DeveloperAnalysis.UnitTestPlans)
+        {
+            <article class="test-plan-card">
+                <div class="story-meta"><span class="story-id">@plan.UserStoryId</span><h3>@plan.Target</h3></div>
+                <div class="table-wrap"><table class="test-table"><thead><tr><th>Test</th><th>Setup</th><th>Action</th><th>Expected result</th></tr></thead><tbody>
+                @foreach (var test in plan.Tests) { <tr><td>@test.Name</td><td>@test.Setup</td><td>@test.Action</td><td>@test.ExpectedResult</td></tr> }
+                </tbody></table></div>
+            </article>
+        }
+    </section>
+
+    <section class="result-section" id="qa">
+        <div class="result-title"><div class="agent-avatar qa">QA</div><div><div class="card-kicker">ROLE 03</div><h2>QA acceptance tests</h2></div></div>
+        @if (Model.QaAnalysis.AppliedOptions is { } qaOptions)
+        {
+            <div class="applied-settings"><span>@qaOptions.Level level</span>@if (!string.IsNullOrWhiteSpace(qaOptions.AdditionalGuidance)) { <p><b>Guidance used:</b> @qaOptions.AdditionalGuidance</p> }</div>
+        }
+        @if (Model.QaAnalysis.ClarificationQuestions.Count > 0)
+        {
+            <div class="subsection"><h3>Scenarios to clarify</h3><ul class="question-list">@foreach (var question in Model.QaAnalysis.ClarificationQuestions) { <li>@question</li> }</ul></div>
+        }
+        <div class="qa-cases">
+            @foreach (var test in Model.QaAnalysis.TestCases)
+            {
+                <article class="story-card qa-case">
+                    <div class="story-meta"><span class="story-id">@test.UserStoryId</span><span class="case-category">@test.Category</span></div>
+                    <h3>@test.Scenario</h3>
+                    <h4>Steps</h4><ol class="criteria-list">@foreach (var step in test.Steps) { <li>@step</li> }</ol>
+                    <div class="expected-result"><b>Expected result</b><span>@test.ExpectedResult</span></div>
+                </article>
+            }
+        </div>
+    </section>
+
+    <section class="review-panel">
+        <div><div class="card-kicker">HUMAN REVIEW</div><h2>Is this ready to move forward?</h2><p>Review the stories and test coverage. Add notes or approve this draft.</p></div>
+        <form method="post" class="review-form">
+            <input type="hidden" name="id" value="@Model.Submission.Id" />
+            <label asp-for="ReviewerNotes" class="form-label">Review notes or unanswered questions</label>
+            <textarea asp-for="ReviewerNotes" class="form-control" rows="3" maxlength="4000" placeholder="Add context for the team…"></textarea>
+            <div asp-validation-summary="ModelOnly" class="field-error"></div>
+            <div class="review-actions">
+                <button class="button-secondary" type="submit" asp-page-handler="SaveNotes">Save notes</button>
+                @if (Model.Submission.Status != SubmissionStatus.Approved)
+                {
+                    <button class="button-primary" type="submit" asp-page-handler="Approve">Approve analysis <span aria-hidden="true">→</span></button>
+                }
+            </div>
+        </form>
+    </section>
+</div>

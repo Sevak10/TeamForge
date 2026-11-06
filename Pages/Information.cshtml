@@ -1,0 +1,53 @@
+@page
+@using TeamForge.Agents
+@{
+    ViewData["Title"] = "Information";
+}
+
+<article class="information-page">
+    <a class="back-link" asp-page="/Index">← Back to workspace</a>
+    <header class="information-hero">
+        <div class="card-kicker">ABOUT TEAMFORGE</div>
+        <h1>From business need<br /><span>to a team-ready draft.</span></h1>
+        <p>TeamForge helps turn a written requirement into structured stories and test guidance. Three AI roles review the same brief from different perspectives. You review the result and decide when it is ready.</p>
+    </header>
+
+    <section class="information-section">
+        <div class="card-kicker">HOW IT WORKS</div>
+        <h2>One brief. Three focused reviews.</h2>
+        <div class="information-roles">
+            <article class="information-role">
+                <span class="agent-avatar ba">BA</span>
+                <div><div class="card-kicker">01 · BUSINESS ANALYST</div><h3>Clarifies the need</h3><p>Surfaces ambiguities, creates user stories, and defines acceptance criteria for each story.</p>
+                    <details class="prompt-details"><summary>View SystemPrompt</summary><pre>@AgentPrompts.BusinessAnalyst</pre></details>
+                </div>
+            </article>
+            <article class="information-role">
+                <span class="agent-avatar dev">DE</span>
+                <div><div class="card-kicker">02 · DEVELOPER</div><h3>Plans implementation</h3><p>Identifies technical questions and dependencies, suggests an approach, and outlines unit tests developers should write for each story.</p>
+                    <details class="prompt-details"><summary>View SystemPrompt</summary><pre>@AgentPrompts.Developer</pre></details>
+                </div>
+            </article>
+            <article class="information-role">
+                <span class="agent-avatar qa">QA</span>
+                <div><div class="card-kicker">03 · QA ENGINEER</div><h3>Checks the scenarios</h3><p>Finds missing cases and provides acceptance tests with steps and expected results, covering positive, negative, boundary, and edge scenarios.</p>
+                    <details class="prompt-details"><summary>View SystemPrompt</summary><pre>@AgentPrompts.QaEngineer</pre></details>
+                </div>
+            </article>
+        </div>
+        <p class="level-explanation"><b>Choose each level independently:</b> Junior favors clear, step-by-step detail; Mid balances detail and brevity; Senior focuses on tradeoffs, risk, and wider impact. Add optional guidance for a role to steer its review toward your priorities.</p>
+    </section>
+
+    <section class="information-section information-output">
+        <div class="card-kicker">YOUR RESULT</div>
+        <h2>A reviewable starting point</h2>
+        <p>Each analysis brings the stories, acceptance criteria, developer unit test plan, QA test cases, and open questions together. It is a draft for human review; it is not marked approved until you choose to approve it. You can add review notes and return to saved analyses later.</p>
+    </section>
+
+    <section class="information-section information-setup">
+        <div class="card-kicker">MODEL AND DATA</div>
+        <h2>Configured for your environment</h2>
+        <p>Choose Ollama, Gemini, or OpenAI from the AI model section on the workspace for each analysis. Enter the model name there; Ollama runs locally, while cloud providers use server-side keys configured with user-secrets or environment variables. The provider implementations use Microsoft.Extensions.AI and can be changed without editing the agent workflow. Analyses are stored in SQL Server through Entity Framework Core.</p>
+        <a class="button-primary information-cta" asp-page="/Index">Start with a requirement <span aria-hidden="true">→</span></a>
+    </section>
+</article>

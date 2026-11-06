@@ -1,0 +1,8 @@
+<Solution>
+  <Project Path="TeamForge.Web.csproj" />
+  <Project Path="TeamForge.Application/TeamForge.Application.csproj" />
+  <Project Path="TeamForge.Domain/TeamForge.Domain.csproj" />
+  <Project Path="TeamForge.Infrastructure/TeamForge.Infrastructure.csproj" />
+  <Project Path="TeamForge.Agents/TeamForge.Agents.csproj" />
+  <Project Path="TeamForge.Tests/TeamForge.Tests.csproj" />
+</Solution>

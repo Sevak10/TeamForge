@@ -1,0 +1,313 @@
+@page
+@model TeamForge.Web.Pages.IndexModel
+@{
+    ViewData["Title"] = "Workspace";
+}
+
+<section class="home-page">
+    <div class="home-mark">TF</div>
+    <h1>What would you like to build?</h1>
+    <p class="home-subtitle">Describe a requirement and your team will turn it into a draft you can review.</p>
+
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger home-alert" role="alert">@Model.ErrorMessage</div>
+    }
+
+    <div class="chat-composer">
+        <form method="post" id="requirement-form">
+            <label asp-for="Requirement" class="visually-hidden">Business requirement</label>
+            <textarea asp-for="Requirement" class="chat-input" rows="5" placeholder="Customers should be able to reset their password using a secure email link that expires after 30 minutes."></textarea>
+            <span asp-validation-for="Requirement" class="field-error"></span>
+            <details class="team-settings model-settings">
+                <summary><span>AI model</span><small>Choose local or cloud</small></summary>
+                <div class="model-choice-grid">
+                    <div>
+                        <label asp-for="ModelProvider">Provider</label>
+                        <select asp-for="ModelProvider" id="ModelProvider" class="form-select">
+                            <option value="Ollama">Ollama · local</option>
+                            <option value="Gemini">Google Gemini</option>
+                            <option value="OpenAI">OpenAI · cloud</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label asp-for="ModelName">Model name</label>
+                        <input asp-for="ModelName" id="ModelName" class="form-control" placeholder="e.g. qwen3.5:9b" />
+                        <span asp-validation-for="ModelName" class="field-error"></span>
+                    </div>
+                </div>
+                <small id="model-provider-help" class="model-provider-help">Ollama must be running locally with the selected model installed.</small>
+            </details>
+            <details class="team-settings">
+                <summary><span>Customize agent roles</span><small>All roles use Mid by default</small></summary>
+                <div class="agent-settings-grid">
+                    <fieldset class="agent-setting">
+                        <legend><span class="agent-avatar ba">BA</span><span>Business Analyst</span></legend>
+                        <div class="level-label">Experience level</div>
+                        <div class="level-options" role="radiogroup" aria-label="Business Analyst experience level">
+                            <label class="level-choice"><input type="radio" asp-for="BusinessAnalystLevel" value="Junior" /><span><strong>Junior</strong><small>Guided</small></span></label>
+                            <label class="level-choice"><input type="radio" asp-for="BusinessAnalystLevel" value="Mid" /><span><strong>Mid</strong><small>Balanced</small></span></label>
+                            <label class="level-choice"><input type="radio" asp-for="BusinessAnalystLevel" value="Senior" /><span><strong>Senior</strong><small>Strategic</small></span></label>
+                        </div>
+                        <label asp-for="BusinessAnalystGuidance">Additional guidance <span>(optional)</span></label>
+                        <textarea asp-for="BusinessAnalystGuidance" rows="2" maxlength="2000" placeholder="For example: Focus on reporting and audit needs."></textarea>
+                        <span asp-validation-for="BusinessAnalystGuidance" class="field-error"></span>
+                    </fieldset>
+                    <fieldset class="agent-setting">
+                        <legend><span class="agent-avatar dev">DE</span><span>Developer</span></legend>
+                        <div class="level-label">Experience level</div>
+                        <div class="level-options" role="radiogroup" aria-label="Developer experience level">
+                            <label class="level-choice"><input type="radio" asp-for="DeveloperLevel" value="Junior" /><span><strong>Junior</strong><small>Guided</small></span></label>
+                            <label class="level-choice"><input type="radio" asp-for="DeveloperLevel" value="Mid" /><span><strong>Mid</strong><small>Balanced</small></span></label>
+                            <label class="level-choice"><input type="radio" asp-for="DeveloperLevel" value="Senior" /><span><strong>Senior</strong><small>Strategic</small></span></label>
+                        </div>
+                        <label asp-for="DeveloperGuidance">Additional guidance <span>(optional)</span></label>
+                        <textarea asp-for="DeveloperGuidance" rows="2" maxlength="2000" placeholder="For example: Prefer existing .NET services and patterns."></textarea>
+                        <span asp-validation-for="DeveloperGuidance" class="field-error"></span>
+                    </fieldset>
+                    <fieldset class="agent-setting">
+                        <legend><span class="agent-avatar qa">QA</span><span>QA Engineer</span></legend>
+                        <div class="level-label">Experience level</div>
+                        <div class="level-options" role="radiogroup" aria-label="QA Engineer experience level">
+                            <label class="level-choice"><input type="radio" asp-for="QaLevel" value="Junior" /><span><strong>Junior</strong><small>Guided</small></span></label>
+                            <label class="level-choice"><input type="radio" asp-for="QaLevel" value="Mid" /><span><strong>Mid</strong><small>Balanced</small></span></label>
+                            <label class="level-choice"><input type="radio" asp-for="QaLevel" value="Senior" /><span><strong>Senior</strong><small>Strategic</small></span></label>
+                        </div>
+                        <label asp-for="QaGuidance">Additional guidance <span>(optional)</span></label>
+                        <textarea asp-for="QaGuidance" rows="2" maxlength="2000" placeholder="For example: Emphasize accessibility and mobile coverage."></textarea>
+                        <span asp-validation-for="QaGuidance" class="field-error"></span>
+                    </fieldset>
+                </div>
+            </details>
+            <div class="composer-footer">
+                <span class="composer-hint">Include the user, goal, and any important constraints.</span>
+                <button type="submit" class="send-button"><span>Analyze</span><span aria-hidden="true">↑</span></button>
+            </div>
+        </form>
+        <section id="analysis-progress" class="analysis-progress" hidden role="status" aria-live="polite" aria-atomic="false">
+            <div class="progress-current">
+                <span id="progress-spinner" class="progress-spinner" aria-hidden="true"></span>
+                <div><strong id="progress-role">Starting your team…</strong><p id="progress-message">Preparing the analysis.</p></div>
+            </div>
+            <ol class="progress-steps">
+                <li data-step="1">Business Analyst</li>
+                <li data-step="2">Developer</li>
+                <li data-step="3">QA Engineer</li>
+                <li data-step="4">Save results</li>
+            </ol>
+        </section>
+        <section id="agent-responses" class="agent-responses" hidden aria-live="polite" aria-label="Completed agent responses">
+            <h2>Team responses</h2>
+            <div id="agent-response-list" class="agent-response-list"></div>
+        </section>
+    </div>
+    <div class="home-footnote">Your analysis is saved for review before it is approved.</div>
+
+    @if (Model.RecentSubmissions.Count > 0)
+    {
+        <details class="recent-drawer">
+            <summary>Recent analyses <span>@Model.RecentSubmissions.Count</span></summary>
+            <div class="history-list">
+                @foreach (var item in Model.RecentSubmissions)
+                {
+                    <a class="history-row" asp-page="/Requirements/Details" asp-route-id="@item.Id">
+                        <div class="history-text"><strong>@(item.Requirement.Length > 105 ? item.Requirement[..105] + "…" : item.Requirement)</strong><span>@item.CreatedAt.ToLocalTime().ToString("MMM d, yyyy · h:mm tt")</span></div>
+                        <span class="review-badge @(item.Status == TeamForge.Domain.SubmissionStatus.Approved ? "approved" : "pending")">@(item.Status == TeamForge.Domain.SubmissionStatus.Approved ? "Approved" : "Needs review")</span>
+                        <span class="history-arrow" aria-hidden="true">↗</span>
+                    </a>
+                }
+            </div>
+        </details>
+    }
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (() => {
+            const form = document.getElementById("requirement-form");
+            const panel = document.getElementById("analysis-progress");
+            const roleLabel = document.getElementById("progress-role");
+            const messageLabel = document.getElementById("progress-message");
+            const spinner = document.getElementById("progress-spinner");
+            const button = form.querySelector("button[type=submit]");
+            const providerSelect = document.getElementById("ModelProvider");
+            const modelInput = document.getElementById("ModelName");
+            const providerHelp = document.getElementById("model-provider-help");
+            const responsePanel = document.getElementById("agent-responses");
+            const responseList = document.getElementById("agent-response-list");
+            const modelDefaults = {
+                Ollama: ["qwen3.5:9b", "Ollama must be running locally with the selected model installed."],
+                Gemini: ["gemini-3.5-flash-lite", "Gemini requires a server-side Ai:GeminiApiKey setting. Your key is never entered here."],
+                OpenAI: ["gpt-4.1-mini", "OpenAI requires a server-side Ai:ApiKey setting. Your key is never entered here."]
+            };
+            let previousProvider = providerSelect.value;
+            providerSelect.addEventListener("change", () => {
+                const [defaultModel, help] = modelDefaults[providerSelect.value];
+                if (modelInput.value.trim() === "" || modelInput.value === modelDefaults[previousProvider][0]) {
+                    modelInput.value = defaultModel;
+                }
+                modelInput.placeholder = defaultModel;
+                providerHelp.textContent = help;
+                previousProvider = providerSelect.value;
+            });
+            providerSelect.dispatchEvent(new Event("change"));
+            const originalButtonHtml = button.innerHTML;
+
+            function addText(parent, tag, text, className) {
+                if (!text) return null;
+                const element = document.createElement(tag);
+                if (className) element.className = className;
+                element.textContent = text;
+                parent.appendChild(element);
+                return element;
+            }
+
+            function addList(parent, title, items, formatItem = (item) => item) {
+                if (!items || items.length === 0) return;
+                addText(parent, "h4", title, "agent-response-subheading");
+                const list = document.createElement("ul");
+                for (const item of items) addText(list, "li", formatItem(item));
+                parent.appendChild(list);
+            }
+
+            function renderAgentResponse(role, result) {
+                responsePanel.hidden = false;
+                const card = document.createElement("article");
+                card.className = "agent-response-card";
+                addText(card, "h3", `${role} response`);
+
+                if (role === "Business Analyst") {
+                    addList(card, "Clarification questions", result.clarificationQuestions);
+                    for (const story of result.userStories || []) {
+                        const storyCard = document.createElement("section");
+                        storyCard.className = "agent-response-story";
+                        addText(storyCard, "h4", `${story.id}: ${story.title}`);
+                        addText(storyCard, "p", `As a ${story.asA}, I want ${story.iWant}, so that ${story.soThat}.`);
+                        addList(storyCard, "Acceptance criteria", story.acceptanceCriteria);
+                        card.appendChild(storyCard);
+                    }
+                } else if (role === "Developer") {
+                    addText(card, "p", result.implementationApproach, "agent-response-approach");
+                    addList(card, "Dependencies", result.dependencies);
+                    addList(card, "Technical questions", result.clarificationQuestions);
+                    for (const plan of result.unitTestPlans || []) {
+                        addText(card, "h4", `${plan.userStoryId}: ${plan.target}`, "agent-response-subheading");
+                        for (const test of plan.tests || []) {
+                            const testCard = document.createElement("div");
+                            testCard.className = "agent-response-test";
+                            addText(testCard, "strong", test.name);
+                            addText(testCard, "p", `Setup: ${test.setup}`);
+                            addText(testCard, "p", `Action: ${test.action}`);
+                            addText(testCard, "p", `Expected: ${test.expectedResult}`);
+                            card.appendChild(testCard);
+                        }
+                    }
+                } else if (role === "QA Engineer") {
+                    addList(card, "Clarification questions", result.clarificationQuestions);
+                    for (const test of result.testCases || []) {
+                        const testCard = document.createElement("div");
+                        testCard.className = "agent-response-test";
+                        addText(testCard, "strong", `${test.userStoryId} · ${test.category}: ${test.scenario}`);
+                        addList(testCard, "Steps", test.steps);
+                        addText(testCard, "p", `Expected: ${test.expectedResult}`);
+                        card.appendChild(testCard);
+                    }
+                }
+
+                responseList.appendChild(card);
+            }
+
+            function showError(message) {
+                panel.hidden = false;
+                panel.classList.add("progress-error");
+                spinner.hidden = true;
+                roleLabel.textContent = "Analysis stopped";
+                messageLabel.textContent = message;
+                button.disabled = false;
+                button.innerHTML = originalButtonHtml;
+            }
+
+            function handleEvent(event) {
+                if (event.type === "stage") {
+                    panel.hidden = false;
+                    panel.classList.remove("progress-error");
+                    roleLabel.textContent = `${event.role} is working`;
+                    messageLabel.textContent = event.message;
+                    panel.querySelectorAll("[data-step]").forEach((item) => {
+                        const step = Number(item.dataset.step);
+                        item.classList.toggle("is-complete", step < event.step);
+                        item.classList.toggle("is-active", step === event.step);
+                    });
+                } else if (event.type === "result") {
+                    roleLabel.textContent = `${event.role} response ready`;
+                    messageLabel.textContent = event.message;
+                    panel.querySelectorAll("[data-step]").forEach((item) => {
+                        if (Number(item.dataset.step) === event.step) {
+                            item.classList.remove("is-active");
+                            item.classList.add("is-complete");
+                        }
+                    });
+                    renderAgentResponse(event.role, event.result);
+                } else if (event.type === "complete") {
+                    roleLabel.textContent = "Analysis complete";
+                    messageLabel.textContent = "Opening your team's results…";
+                    panel.querySelectorAll("[data-step]").forEach((item) => {
+                        item.classList.remove("is-active");
+                        item.classList.add("is-complete");
+                    });
+                    window.location.assign(event.redirectUrl);
+                } else if (event.type === "error") {
+                    showError(event.message);
+                }
+            }
+
+            form.addEventListener("submit", async (submitEvent) => {
+                submitEvent.preventDefault();
+                if (!form.reportValidity()) return;
+
+                panel.hidden = false;
+                panel.classList.remove("progress-error");
+                spinner.hidden = false;
+                roleLabel.textContent = "Starting your team…";
+                messageLabel.textContent = "Preparing the analysis.";
+                panel.querySelectorAll("[data-step]").forEach((item) => item.classList.remove("is-active", "is-complete"));
+                responseList.replaceChildren();
+                responsePanel.hidden = true;
+                button.disabled = true;
+                button.textContent = "Working…";
+
+                try {
+                    const url = new URL(form.action, window.location.href);
+                    url.searchParams.set("handler", "Analyze");
+                    const response = await fetch(url, {
+                        method: "POST",
+                        body: new FormData(form),
+                        headers: { "Accept": "text/event-stream" }
+                    });
+                    if (!response.ok || !response.body) {
+                        throw new Error("The progress connection could not be started. Please try again.");
+                    }
+
+                    const reader = response.body.getReader();
+                    const decoder = new TextDecoder();
+                    let buffer = "";
+                    while (true) {
+                        const { value, done } = await reader.read();
+                        buffer += decoder.decode(value || new Uint8Array(), { stream: !done });
+                        let separator;
+                        while ((separator = buffer.indexOf("\n\n")) >= 0) {
+                            const block = buffer.slice(0, separator);
+                            buffer = buffer.slice(separator + 2);
+                            const dataLine = block.split("\n").find((line) => line.startsWith("data: "));
+                            if (dataLine) handleEvent(JSON.parse(dataLine.slice(6)));
+                        }
+                        if (done) break;
+                    }
+                } catch (error) {
+                    showError(error.message || "The analysis could not be completed. Please try again.");
+                }
+            });
+        })();
+    </script>
+}
