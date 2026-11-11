@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 using TeamForge.Application;
@@ -10,7 +11,23 @@ builder.Host.UseSerilog((context, loggerConfiguration) => loggerConfiguration
     .Enrich.FromLogContext()
     .WriteTo.Console());
 
-builder.Services.AddRazorPages();
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(options =>
+    {
+        options.LoginPath = "/Login";
+        options.AccessDeniedPath = "/Login";
+        options.ExpireTimeSpan = TimeSpan.FromDays(7);
+    });
+builder.Services.AddAuthorization();
+
+builder.Services.AddControllers();
+builder.Services.AddRazorPages(options =>
+{
+    options.Conventions.AuthorizeFolder("/");
+    options.Conventions.AllowAnonymousToPage("/Login");
+    options.Conventions.AllowAnonymousToPage("/Information");
+    options.Conventions.AllowAnonymousToPage("/Error");
+});
 builder.Services.AddTeamForgeApplication();
 builder.Services.AddTeamForgeInfrastructure(builder.Configuration);
 
@@ -25,6 +42,9 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
+app.UseAuthentication();
+app.UseAuthorization();
+app.MapControllers();
 app.MapRazorPages();
 
 await using (var scope = app.Services.CreateAsyncScope())

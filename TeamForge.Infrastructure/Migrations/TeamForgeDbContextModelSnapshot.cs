@@ -22,6 +22,36 @@ namespace TeamForge.Infrastructure.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("TeamForge.Domain.Project", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
+
+                    b.Property<string>("OwnerUsername")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OwnerUsername", "CreatedAt");
+
+                    b.ToTable("Projects");
+                });
+
             modelBuilder.Entity("TeamForge.Domain.RequirementSubmission", b =>
                 {
                     b.Property<Guid>("Id")
@@ -38,6 +68,16 @@ namespace TeamForge.Infrastructure.Migrations
                     b.Property<string>("DeveloperAnalysisJson")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("OwnerUsername")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .HasDefaultValue("");
+
+                    b.Property<Guid?>("ProjectId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("QaAnalysisJson")
                         .IsRequired()
@@ -64,7 +104,26 @@ namespace TeamForge.Infrastructure.Migrations
 
                     b.HasIndex("CreatedAt");
 
+                    b.HasIndex("ProjectId");
+
+                    b.HasIndex("OwnerUsername", "ProjectId", "CreatedAt");
+
                     b.ToTable("Submissions");
+                });
+
+            modelBuilder.Entity("TeamForge.Domain.RequirementSubmission", b =>
+                {
+                    b.HasOne("TeamForge.Domain.Project", "Project")
+                        .WithMany("Submissions")
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Project");
+                });
+
+            modelBuilder.Entity("TeamForge.Domain.Project", b =>
+                {
+                    b.Navigation("Submissions");
                 });
 #pragma warning restore 612, 618
         }

@@ -9,8 +9,15 @@ using TeamForge.Domain;
 
 namespace TeamForge.Web.Pages;
 
-public sealed class IndexModel(RequirementWorkflow workflow, ILogger<IndexModel> logger, IConfiguration configuration) : PageModel
+public sealed class IndexModel(
+    RequirementWorkflow workflow,
+    ProjectService projectService,
+    ILogger<IndexModel> logger,
+    IConfiguration configuration) : PageModel
 {
+    [BindProperty(SupportsGet = true)]
+    public Guid? ProjectId { get; set; }
+
     [BindProperty]
     [Required(ErrorMessage = "Enter a requirement to get started.")]
     [StringLength(12000, MinimumLength = 10, ErrorMessage = "Requirements must be between 10 and 12,000 characters.")]
@@ -40,6 +47,8 @@ public sealed class IndexModel(RequirementWorkflow workflow, ILogger<IndexModel>
     [BindProperty, Required, StringLength(120)]
     public string ModelName { get; set; } = "qwen3.5:9b";
 
+    public Project? SelectedProject { get; private set; }
+    public IReadOnlyList<Project> UserProjects { get; private set; } = [];
     public IReadOnlyList<RequirementSubmission> RecentSubmissions { get; private set; } = [];
     public string? ErrorMessage { get; private set; }
 
@@ -47,20 +56,27 @@ public sealed class IndexModel(RequirementWorkflow workflow, ILogger<IndexModel>
     {
         ModelProvider = configuration["Ai:Provider"] ?? "Ollama";
         ModelName = configuration["Ai:Model"] ?? "qwen3.5:9b";
-        await LoadRecentAsync(cancellationToken);
+        await LoadWorkspaceDataAsync(cancellationToken);
     }
 
     public async Task<IActionResult> OnPostAsync(CancellationToken cancellationToken)
     {
+        var username = CurrentUsername;
         if (!ModelState.IsValid)
         {
-            await LoadRecentAsync(cancellationToken);
+            await LoadWorkspaceDataAsync(cancellationToken);
             return Page();
         }
 
         try
         {
-            var analysis = await workflow.AnalyzeAsync(Requirement, BuildAgentOptions(), cancellationToken);
+            var validProjectId = await ResolveValidProjectIdAsync(username, cancellationToken);
+            var analysis = await workflow.AnalyzeAsync(
+                Requirement,
+                BuildAgentOptions(),
+                cancellationToken,
+                projectId: validProjectId,
+                ownerUsername: username);
             return RedirectToPage("/Requirements/Details", new { id = analysis.Submission.Id });
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -71,7 +87,7 @@ public sealed class IndexModel(RequirementWorkflow workflow, ILogger<IndexModel>
         {
             logger.LogError(exception, "TeamForge could not analyze the submitted requirement using {Provider} model {Model}", ModelProvider, ModelName);
             ErrorMessage = GetAnalysisFailureMessage(exception, ModelProvider, ModelName, "analysis");
-            await LoadRecentAsync(cancellationToken);
+            await LoadWorkspaceDataAsync(cancellationToken);
             return Page();
         }
     }
@@ -94,9 +110,11 @@ public sealed class IndexModel(RequirementWorkflow workflow, ILogger<IndexModel>
             return new EmptyResult();
         }
 
+        var username = CurrentUsername;
         var currentRole = "Business Analyst";
         try
         {
+            var validProjectId = await ResolveValidProjectIdAsync(username, cancellationToken);
             var analysis = await workflow.AnalyzeAsync(
                 Requirement,
                 BuildAgentOptions(),
@@ -112,7 +130,9 @@ public sealed class IndexModel(RequirementWorkflow workflow, ILogger<IndexModel>
                         progress.Message,
                         progress.Result
                     }, cancellationToken);
-                });
+                },
+                projectId: validProjectId,
+                ownerUsername: username);
 
             await WriteProgressEventAsync(new
             {
@@ -137,8 +157,34 @@ public sealed class IndexModel(RequirementWorkflow workflow, ILogger<IndexModel>
         return new EmptyResult();
     }
 
-    private async Task LoadRecentAsync(CancellationToken cancellationToken) =>
-        RecentSubmissions = await workflow.GetRecentAsync(cancellationToken);
+    private string CurrentUsername => User.Identity?.Name ?? string.Empty;
+
+    private async Task<Guid?> ResolveValidProjectIdAsync(string username, CancellationToken cancellationToken)
+    {
+        if (!ProjectId.HasValue)
+            return null;
+
+        var project = await projectService.GetAsync(ProjectId.Value, username, cancellationToken);
+        return project?.Id;
+    }
+
+    private async Task LoadWorkspaceDataAsync(CancellationToken cancellationToken)
+    {
+        var username = CurrentUsername;
+        UserProjects = await projectService.GetByOwnerAsync(username, cancellationToken);
+
+        if (ProjectId.HasValue)
+        {
+            SelectedProject = UserProjects.FirstOrDefault(p => p.Id == ProjectId.Value);
+            if (SelectedProject is null)
+            {
+                ProjectId = null;
+            }
+        }
+
+        ViewData["ActiveProjectId"] = ProjectId;
+        RecentSubmissions = await workflow.GetRecentForOwnerAsync(username, ProjectId, cancellationToken);
+    }
 
     private RequirementAgentOptions BuildAgentOptions() => new(
         new(BusinessAnalystLevel, BusinessAnalystGuidance),

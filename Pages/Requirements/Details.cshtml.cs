@@ -23,11 +23,14 @@ public sealed class DetailsModel(RequirementWorkflow workflow, ILogger<DetailsMo
 
     public async Task<IActionResult> OnGetAsync(Guid id, CancellationToken cancellationToken)
     {
-        var submission = await workflow.GetAsync(id, cancellationToken);
+        var username = User.Identity?.Name ?? string.Empty;
+        var submission = await workflow.GetForOwnerAsync(id, username, cancellationToken);
         if (submission is null)
             return NotFound();
 
         Submission = submission;
+        ViewData["ActiveProjectId"] = submission.ProjectId;
+        ViewData["ActiveSubmissionId"] = submission.Id;
         ReviewerNotes = submission.ReviewerNotes;
         var jsonOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web);
         jsonOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
@@ -45,9 +48,10 @@ public sealed class DetailsModel(RequirementWorkflow workflow, ILogger<DetailsMo
 
     private async Task<IActionResult> UpdateReviewAsync(Guid id, bool approve, CancellationToken cancellationToken)
     {
+        var username = User.Identity?.Name ?? string.Empty;
         try
         {
-            await workflow.SaveReviewAsync(id, ReviewerNotes, approve, cancellationToken);
+            await workflow.SaveReviewAsync(id, ReviewerNotes, approve, cancellationToken, ownerUsername: username);
             Notice = approve ? "The analysis was approved." : "Your review notes were saved.";
             return RedirectToPage(new { id });
         }

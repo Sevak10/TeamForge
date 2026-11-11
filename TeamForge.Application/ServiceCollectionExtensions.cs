@@ -11,6 +11,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IAgent<DeveloperAnalysisInput, DeveloperAnalysisResult>, DeveloperAgent>();
         services.AddScoped<IAgent<QaAnalysisInput, QaAnalysisResult>, QaAgent>();
         services.AddScoped<RequirementWorkflow>();
+        services.AddScoped<ProjectService>();
         return services;
     }
 }

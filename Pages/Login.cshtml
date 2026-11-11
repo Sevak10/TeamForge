@@ -1,0 +1,36 @@
+@page "/Login"
+@model TeamForge.Web.Pages.LoginModel
+@{
+    ViewData["Title"] = "Sign in";
+}
+
+<section class="login-page">
+    <div class="login-card">
+        <div class="home-mark">TF</div>
+        <h1>Sign in to TeamForge</h1>
+        <p class="home-subtitle">Access your projects and requirement conversation history.</p>
+
+        @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+        {
+            <div class="alert alert-danger" role="alert">@Model.ErrorMessage</div>
+        }
+
+        <form method="post" asp-controller="Auth" asp-action="Login" class="login-form">
+            <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
+
+            <div class="mb-3 text-start">
+                <label for="username" class="form-label">Username</label>
+                <input id="username" name="username" type="text" class="form-control" autocomplete="username" required autofocus placeholder="Enter username" />
+            </div>
+
+            <div class="mb-3 text-start">
+                <label for="password" class="form-label">Password</label>
+                <input id="password" name="password" type="password" class="form-control" autocomplete="current-password" required placeholder="Enter password" />
+            </div>
+
+            <button type="submit" class="button-primary w-100 justify-content-center mt-2">
+                Sign in <span aria-hidden="true">→</span>
+            </button>
+        </form>
+    </div>
+</section>
