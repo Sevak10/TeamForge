@@ -203,7 +203,12 @@
             function renderAgentResponse(role, result) {
                 responsePanel.hidden = false;
                 const card = document.createElement("article");
-                card.className = "agent-response-card";
+                const roleClass = {
+                    "Business Analyst": "business-analyst",
+                    "Developer": "developer",
+                    "QA Engineer": "qa-engineer"
+                }[role] || "general";
+                card.className = `agent-response-card agent-response-${roleClass}`;
                 addText(card, "h3", `${role} response`);
 
                 if (role === "Business Analyst") {

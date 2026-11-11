@@ -33,7 +33,7 @@
         <div class="alert alert-success" role="status">@Model.Notice</div>
     }
     <section class="requirement-panel">
-        <div class="card-kicker">ORIGINAL REQUIREMENT</div>
+        <div class="card-kicker">REQUIREMENT USED FOR THIS ANALYSIS</div>
         <p>@Model.Submission.Requirement</p>
     </section>
 
@@ -112,6 +112,38 @@
         </div>
     </section>
 
+    <section class="refinement-panel">
+        <div>
+            <div class="card-kicker">ITERATE ON THIS ANALYSIS</div>
+            <h2>Change or add a requirement</h2>
+            <p>Describe what should change. The team will analyze it again and save a new review, keeping this version available.</p>
+            <p class="refinement-example"><b>Example:</b> “Require a valid email address and a phone number validator on the password reset form. Add tests for invalid and missing values.”</p>
+        </div>
+        <form method="post" asp-page-handler="Refine" class="refinement-form">
+            <input type="hidden" name="id" value="@Model.Submission.Id" />
+            <label asp-for="RefinementInstruction" class="form-label">Your change or suggestion</label>
+            <textarea asp-for="RefinementInstruction" class="form-control" rows="4" maxlength="4000" placeholder="For example: Add email format and phone number validation…"></textarea>
+            <span asp-validation-for="RefinementInstruction" class="field-error"></span>
+            <div class="refinement-model">
+                <div>
+                    <label asp-for="ModelProvider" class="form-label">AI provider</label>
+                    <select asp-for="ModelProvider" class="form-select">
+                        <option value="Ollama">Ollama</option>
+                        <option value="Gemini">Gemini</option>
+                        <option value="OpenAI">OpenAI</option>
+                    </select>
+                </div>
+                <div>
+                    <label asp-for="ModelName" class="form-label">Model</label>
+                    <input asp-for="ModelName" class="form-control" maxlength="120" />
+                    <span asp-validation-for="ModelName" class="field-error"></span>
+                </div>
+            </div>
+            <div asp-validation-summary="ModelOnly" class="field-error"></div>
+            <button class="button-primary" type="submit">Analyze this change <span aria-hidden="true">→</span></button>
+        </form>
+    </section>
+
     <section class="review-panel">
         <div><div class="card-kicker">HUMAN REVIEW</div><h2>Is this ready to move forward?</h2><p>Review the stories and test coverage. Add notes or approve this draft.</p></div>
         <form method="post" class="review-form">
@@ -129,3 +161,7 @@
         </form>
     </section>
 </div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
