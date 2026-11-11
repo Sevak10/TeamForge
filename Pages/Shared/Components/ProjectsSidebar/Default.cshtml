@@ -1,0 +1,71 @@
+@model TeamForge.Web.ViewComponents.ProjectsSidebarViewModel
+
+<aside class="projects-sidebar" aria-label="Projects and conversation history">
+    <div class="sidebar-header">
+        <span class="sidebar-kicker">PROJECTS</span>
+        <details class="new-project-details" @(string.IsNullOrEmpty(Model.ProjectError) ? "" : "open")>
+            <summary class="new-project-toggle" title="Add new project">+ New</summary>
+            <form method="post" asp-controller="Projects" asp-action="Create" class="new-project-form">
+                @if (!string.IsNullOrEmpty(Model.ProjectError))
+                {
+                    <div class="sidebar-error">@Model.ProjectError</div>
+                }
+                <input type="text" name="Name" class="form-control form-control-sm" placeholder="Project name…" maxlength="120" required />
+                <input type="text" name="Description" class="form-control form-control-sm" placeholder="Short description (optional)" maxlength="500" />
+                <button type="submit" class="sidebar-create-btn">Create project</button>
+            </form>
+        </details>
+    </div>
+
+    <div class="sidebar-scroll">
+        <a asp-page="/Index" class="sidebar-all-link @(Model.ActiveProjectId == null && Model.ActiveSubmissionId == null ? "is-active" : "")">
+            <span>All workspace</span>
+        </a>
+
+        @if (Model.Projects.Count == 0)
+        {
+            <div class="sidebar-empty">
+                No projects yet. Click <strong>+ New</strong> above to create a project and organize your conversations.
+            </div>
+        }
+        else
+        {
+            <div class="project-list">
+                @foreach (var project in Model.Projects)
+                {
+                    var isProjectActive = Model.ActiveProjectId == project.Id || project.Submissions.Any(s => s.Id == Model.ActiveSubmissionId);
+                    <details class="project-group @(isProjectActive ? "is-active-project" : "")" @(isProjectActive ? "open" : "")>
+                        <summary class="project-summary">
+                            <span class="project-folder-icon" aria-hidden="true">📁</span>
+                            <a asp-page="/Index" asp-route-projectId="@project.Id" class="project-name-link @(Model.ActiveProjectId == project.Id && Model.ActiveSubmissionId == null ? "is-selected" : "")">@project.Name</a>
+                            <span class="project-count">@project.Submissions.Count</span>
+                        </summary>
+
+                        <div class="project-conversations">
+                            <a asp-page="/Index" asp-route-projectId="@project.Id" class="new-conversation-link">+ New conversation</a>
+
+                            @if (project.Submissions.Count == 0)
+                            {
+                                <div class="no-conversations">No conversations yet</div>
+                            }
+                            else
+                            {
+                                @foreach (var submission in project.Submissions)
+                                {
+                                    var title = submission.Requirement.Length > 46 ? submission.Requirement[..46] + "…" : submission.Requirement;
+                                    <a asp-page="/Requirements/Details"
+                                       asp-route-id="@submission.Id"
+                                       class="conversation-link @(Model.ActiveSubmissionId == submission.Id ? "is-active" : "")"
+                                       title="@submission.Requirement">
+                                        <span class="conversation-title">@title</span>
+                                        <span class="conversation-date">@submission.CreatedAt.ToLocalTime().ToString("MMM d · h:mm tt")</span>
+                                    </a>
+                                }
+                            }
+                        </div>
+                    </details>
+                }
+            </div>
+        }
+    </div>
+</aside>

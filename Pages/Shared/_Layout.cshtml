@@ -11,8 +11,8 @@
 </head>
 <body>
     <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container">
+        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow">
+            <div class="container-fluid px-4">
                 <a class="navbar-brand" asp-area="" asp-page="/Index">TeamForge</a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
                         aria-expanded="false" aria-label="Toggle navigation">
@@ -20,22 +20,53 @@
                 </button>
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
                     <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-page="/Index">Workspace</a>
-                        </li>
+                        @if (User.Identity?.IsAuthenticated == true)
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-page="/Index">Workspace</a>
+                            </li>
+                        }
                         <li class="nav-item">
                             <a class="nav-link text-dark" asp-area="" asp-page="/Information">Information</a>
                         </li>
                     </ul>
+                    <div class="d-flex align-items-center gap-3">
+                        @if (User.Identity?.IsAuthenticated == true)
+                        {
+                            <span class="user-chip">Signed in as <strong>@User.Identity.Name</strong></span>
+                            <form method="post" asp-controller="Auth" asp-action="Logout" class="m-0">
+                                <button type="submit" class="logout-btn">Sign out</button>
+                            </form>
+                        }
+                        else
+                        {
+                            <a class="nav-link text-dark" asp-page="/Login">Sign in</a>
+                        }
+                    </div>
                 </div>
             </div>
         </nav>
     </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
-    </div>
+
+    @if (User.Identity?.IsAuthenticated == true)
+    {
+        <div class="app-shell">
+            @await Component.InvokeAsync("ProjectsSidebar")
+            <div class="app-main">
+                <main role="main" class="pb-3">
+                    @RenderBody()
+                </main>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="container">
+            <main role="main" class="pb-3">
+                @RenderBody()
+            </main>
+        </div>
+    }
 
     <footer class="border-top footer text-muted">
         <div class="container">

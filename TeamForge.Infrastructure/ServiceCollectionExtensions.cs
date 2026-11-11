@@ -19,6 +19,7 @@ public static class ServiceCollectionExtensions
             ?? throw new InvalidOperationException("ConnectionStrings:TeamForge must be configured.");
         services.AddDbContext<TeamForgeDbContext>(options => options.UseSqlServer(connectionString));
         services.AddScoped<ISubmissionRepository, SubmissionRepository>();
+        services.AddScoped<IProjectRepository, ProjectRepository>();
         services.AddScoped<IAgentChatClientFactory, AgentChatClientFactory>();
         return services;
     }

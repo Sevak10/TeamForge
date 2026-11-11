@@ -6,10 +6,23 @@
 }
 
 <div class="results-page">
-    <a class="back-link" asp-page="/Index">← Back to workspace</a>
+    @if (Model.Submission.Project is not null)
+    {
+        <a class="back-link" asp-page="/Index" asp-route-projectId="@Model.Submission.ProjectId">← Back to @Model.Submission.Project.Name</a>
+    }
+    else
+    {
+        <a class="back-link" asp-page="/Index">← Back to workspace</a>
+    }
     <header class="results-header">
         <div>
-            <div class="card-kicker">TEAM ANALYSIS · @Model.Submission.CreatedAt.ToLocalTime().ToString("MMM d, yyyy")</div>
+            <div class="card-kicker">
+                @if (Model.Submission.Project is not null)
+                {
+                    <span>PROJECT: @Model.Submission.Project.Name.ToUpperInvariant() · </span>
+                }
+                TEAM ANALYSIS · @Model.Submission.CreatedAt.ToLocalTime().ToString("MMM d, yyyy")
+            </div>
             <h1>Requirement review</h1>
         </div>
         <span class="review-badge @(Model.Submission.Status == SubmissionStatus.Approved ? "approved" : "pending")">@(Model.Submission.Status == SubmissionStatus.Approved ? "Approved" : "Awaiting your review")</span>

@@ -6,8 +6,24 @@
 
 <section class="home-page">
     <div class="home-mark">TF</div>
-    <h1>What would you like to build?</h1>
-    <p class="home-subtitle">Describe a requirement and your team will turn it into a draft you can review.</p>
+    @if (Model.SelectedProject is not null)
+    {
+        <div class="project-context-badge">Project · <strong>@Model.SelectedProject.Name</strong></div>
+        <h1>New conversation in @Model.SelectedProject.Name</h1>
+        @if (!string.IsNullOrWhiteSpace(Model.SelectedProject.Description))
+        {
+            <p class="home-subtitle">@Model.SelectedProject.Description</p>
+        }
+        else
+        {
+            <p class="home-subtitle">Describe a requirement and your team will save the conversation under this project.</p>
+        }
+    }
+    else
+    {
+        <h1>What would you like to build?</h1>
+        <p class="home-subtitle">Describe a requirement and your team will turn it into a draft you can review.</p>
+    }
 
     @if (!string.IsNullOrEmpty(Model.ErrorMessage))
     {
@@ -16,6 +32,19 @@
 
     <div class="chat-composer">
         <form method="post" id="requirement-form">
+            @if (Model.UserProjects.Count > 0)
+            {
+                <div class="composer-project-bar">
+                    <label asp-for="ProjectId">Project:</label>
+                    <select asp-for="ProjectId" class="form-select form-select-sm composer-project-select">
+                        <option value="">No project (General workspace)</option>
+                        @foreach (var proj in Model.UserProjects)
+                        {
+                            <option value="@proj.Id">@proj.Name</option>
+                        }
+                    </select>
+                </div>
+            }
             <label asp-for="Requirement" class="visually-hidden">Business requirement</label>
             <textarea asp-for="Requirement" class="chat-input" rows="5" placeholder="Customers should be able to reset their password using a secure email link that expires after 30 minutes."></textarea>
             <span asp-validation-for="Requirement" class="field-error"></span>
@@ -105,8 +134,8 @@
 
     @if (Model.RecentSubmissions.Count > 0)
     {
-        <details class="recent-drawer">
-            <summary>Recent analyses <span>@Model.RecentSubmissions.Count</span></summary>
+        <details class="recent-drawer" @(Model.SelectedProject is not null ? "open" : "")>
+            <summary>@(Model.SelectedProject is not null ? $"Conversation history in {Model.SelectedProject.Name}" : "Recent conversations") <span>@Model.RecentSubmissions.Count</span></summary>
             <div class="history-list">
                 @foreach (var item in Model.RecentSubmissions)
                 {

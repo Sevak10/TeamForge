@@ -4,15 +4,20 @@ public sealed class RequirementSubmission
 {
     private RequirementSubmission() { }
 
-    public RequirementSubmission(string requirement, DateTimeOffset createdAt)
+    public RequirementSubmission(string requirement, DateTimeOffset createdAt, Guid? projectId = null, string? ownerUsername = null)
     {
         Id = Guid.NewGuid();
         Requirement = requirement;
         CreatedAt = createdAt;
+        ProjectId = projectId;
+        OwnerUsername = string.IsNullOrWhiteSpace(ownerUsername) ? string.Empty : ownerUsername.Trim();
         Status = SubmissionStatus.AwaitingReview;
     }
 
     public Guid Id { get; private set; }
+    public Guid? ProjectId { get; private set; }
+    public Project? Project { get; private set; }
+    public string OwnerUsername { get; private set; } = string.Empty;
     public string Requirement { get; private set; } = string.Empty;
     public DateTimeOffset CreatedAt { get; private set; }
     public string BusinessAnalysisJson { get; private set; } = string.Empty;

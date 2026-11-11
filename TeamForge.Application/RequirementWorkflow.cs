@@ -28,7 +28,9 @@ public sealed class RequirementWorkflow(
         string requirement,
         RequirementAgentOptions options,
         CancellationToken cancellationToken,
-        Func<AnalysisProgress, Task>? reportProgress = null)
+        Func<AnalysisProgress, Task>? reportProgress = null,
+        Guid? projectId = null,
+        string? ownerUsername = null)
     {
         if (string.IsNullOrWhiteSpace(requirement))
             throw new ArgumentException("Enter a business requirement before submitting.", nameof(requirement));
@@ -72,7 +74,7 @@ public sealed class RequirementWorkflow(
 
         if (reportProgress is not null)
             await reportProgress(new(4, "Saving results", "Saving the team's analysis for your review."));
-        var submission = new RequirementSubmission(cleanedRequirement, DateTimeOffset.UtcNow);
+        var submission = new RequirementSubmission(cleanedRequirement, DateTimeOffset.UtcNow, projectId, ownerUsername);
         submission.SetAnalysis(
             JsonSerializer.Serialize(businessResult, JsonOptions),
             JsonSerializer.Serialize(developerResult, JsonOptions),
@@ -85,12 +87,20 @@ public sealed class RequirementWorkflow(
     public Task<IReadOnlyList<RequirementSubmission>> GetRecentAsync(CancellationToken cancellationToken) =>
         submissions.GetRecentAsync(20, cancellationToken);
 
+    public Task<IReadOnlyList<RequirementSubmission>> GetRecentForOwnerAsync(string ownerUsername, Guid? projectId, CancellationToken cancellationToken) =>
+        submissions.GetRecentByOwnerAsync(ownerUsername, projectId, 30, cancellationToken);
+
     public Task<RequirementSubmission?> GetAsync(Guid id, CancellationToken cancellationToken) =>
         submissions.GetByIdAsync(id, cancellationToken);
 
-    public async Task SaveReviewAsync(Guid id, string? notes, bool approve, CancellationToken cancellationToken)
+    public Task<RequirementSubmission?> GetForOwnerAsync(Guid id, string ownerUsername, CancellationToken cancellationToken) =>
+        submissions.GetByIdForOwnerAsync(id, ownerUsername, cancellationToken);
+
+    public async Task SaveReviewAsync(Guid id, string? notes, bool approve, CancellationToken cancellationToken, string? ownerUsername = null)
     {
-        var submission = await submissions.GetByIdAsync(id, cancellationToken)
+        var submission = (ownerUsername is null
+            ? await submissions.GetByIdAsync(id, cancellationToken)
+            : await submissions.GetByIdForOwnerAsync(id, ownerUsername, cancellationToken))
             ?? throw new KeyNotFoundException("The requirement analysis was not found.");
 
         submission.SaveReviewerNotes(notes);
